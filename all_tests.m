@@ -89,6 +89,8 @@ for i = 1:length(functions)
     tay_values = [];
     pad_steps = [];
     pad_values = [];
+    tay_times = [];
+    pad_times = [];
     expr = functions{i};
     disp(['Current Test: ', Names{i}]);
     for trial = 1:num_trials
