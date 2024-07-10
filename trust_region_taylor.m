@@ -1,4 +1,4 @@
-function [result, history] = trust_region_ind(f, xs, x0, delta, max_iter, tol, hat, thresh)
+function [result, history] = trust_region_taylor(f, xs, x0, delta, max_iter, tol, hat, thresh)
     m = f;
     x = x0;
     history = x0;

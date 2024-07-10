@@ -1,4 +1,4 @@
-function [result, history] = trust_region_nd(f, xs, x0, delta, max_iter, tol, hat, thresh)
+function [result, history] = trust_region_pade(f, xs, x0, delta, max_iter, tol, hat, thresh)
     m = f;
     x = x0;
     history = x0;

@@ -135,7 +135,7 @@ maxIter = 100; % Maximum number of iterations
 tol = 1e-3; % Tolerance for convergence
 deg = 2; % Degree of the polynomial approximation
 eta = 0.2; % Parameter for the trust region method
-num_trials = 50; % Number of random trials
+num_trials = 2; % Number of random trials
 
 % Arrays to store results
 
@@ -163,12 +163,12 @@ for i = 1:length(functions)
 
         % Perform the trust region method with Taylor approximation
         tic;
-        [result_tay, history_tay] = trust_region_ind(expr, [x, y], [x0, y0], r0, maxIter, tol, rf, eta);
+        [result_tay, history_tay] = trust_region_taylor(expr, [x, y], [x0, y0], r0, maxIter, tol, rf, eta);
         tay_times = [tay_times; toc];
         
         % Perform the trust region method with Padé approximation
         tic;
-        [result_pad, history_pad] = trust_region_nd(expr, [x, y], [x0, y0], r0, maxIter, tol, rf, eta);
+        [result_pad, history_pad] = trust_region_pade(expr, [x, y], [x0, y0], r0, maxIter, tol, rf, eta);
         pad_times = [pad_times; toc];
 
         
@@ -180,7 +180,7 @@ for i = 1:length(functions)
         pad_values = [pad_values; double(subs(expr, {x, y}, {double(result_pad(1)), double(result_pad(2))}))];
         
     end
-    save(['SavedData/', Names{i}, '.mat'], 'pad_steps', 'pad_values', 'pad_times', 'tay_steps', 'tay_values', 'tay_times');
+    save(['adsfasd/', Names{i}, '.mat'], 'pad_steps', 'pad_values', 'pad_times', 'tay_steps', 'tay_values', 'tay_times');
     % Calculate mean values
 
 

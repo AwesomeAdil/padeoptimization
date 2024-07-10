@@ -79,7 +79,7 @@ function result = boxplotdata(tay_steps, pad_steps, tay_values, pad_values, tay_
     
     % Adjust layout
     sgtitle(['Convergence Analysis Apples: ', Name]);
-    savefig(['Apple Comparisons/', Name,'.fig']);
+    savefig(['Apple asdf/', Name,'.fig']);
 
     % Create a figure for differences
     fig_diff = figure;
@@ -118,5 +118,5 @@ function result = boxplotdata(tay_steps, pad_steps, tay_values, pad_values, tay_
     yline(0, 'k--', 'LineWidth', 1); % Add a horizontal line at 0
     hold off;
     sgtitle(['Differences Analysis: ',  Name]);
-    savefig(['diffs/Diff_', Name,'.fig']);
+    savefig(['asdfa/Diff_', Name,'.fig']);
     end
