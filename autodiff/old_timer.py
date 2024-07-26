@@ -11,32 +11,14 @@ from optimization_functions import (
     fr, sin, exp, ackley, sphere, rastrigin, rosenbrock, beale, goldstein_price, levi, bukin_n6,
     booth, matyas, three_hump_camel, easom, mccormick, styblinski_tang, schaffer_n2
 )
-
-function_list = [
-    #fr,
-    #sin,
-    #exp,
-    #ackley,
-    #sphere,
-    #rastrigin,
-    #rosenbrock,
-    #beale,
-    #goldstein_price,
-    #levi,
-    #bukin_n6,
-    booth,
-    matyas,
-    three_hump_camel,
-    easom,
-    mccormick,
-    styblinski_tang,
-    schaffer_n2
-]
-
-
 import pdb
 from grapher import plot
 import scipy.linalg
+import time
+t_time = 0
+o_time = 0
+p_time = 0
+v_time = 0
 
 # Define a small epsilon value for numerical stability
 EPSILON = 1e-8
@@ -68,9 +50,12 @@ def taylor_series_multidim(f, a, degree):
     return coeffs
 
 def make_pade_approximation(coeffs, m, n, a):
+    global p_time, v_time
+    start = time.time()
     # Print and check the types of the results
     P = []
     vals = [cf(*[a]) for cf in coeffs]
+    v_time += time.time() - start
     #print('vals', vals)
 
     # Continue with the rest of your code
@@ -106,6 +91,7 @@ def make_pade_approximation(coeffs, m, n, a):
     P = jnp.array(P, dtype=jnp.float64)  # Convert to a JAX array after confirming numeric results
     
     def res(x0, *args):
+        print("TROUBLE", args)
         x0 = jnp.array(x0, dtype=jnp.float64)  # Use float64 for higher precision
         # Compute the numerator
         num = (P[0] + P[1] * x0 + P[2] * x0**2)
@@ -114,6 +100,9 @@ def make_pade_approximation(coeffs, m, n, a):
         denom = (Q[0] + Q[1] * x0 + Q[2] * x0**2) + EPSILON
         
         return num / denom
+    end = time.time()
+    p_time += end-start
+    print(end-start)
     return res
 
 def B1(f1, f2, f3, f4, *args):
@@ -165,8 +154,12 @@ def multon(f, q, *args):
     return f(*args) * q(*args)
 
 def nested_pade_sim(f, a, deg):
+    global t_time
     a = jnp.array(a, dtype=jnp.float64)  # Use float64 for higher precision
+    start = time.time()
     coeffs = taylor_series_multidim(f, a, deg)
+    end = time.time()
+    t_time += end-start
 
     if len(a) == 1:
         return make_pade_approximation(coeffs, 2, 2, a[0])
@@ -196,16 +189,13 @@ if __name__=="__main__":
     # Define the point of expansion and degrees
     a = (0.0,0.0)  # Example point in n-dimensional space
     deg = 5  # Example degree for Taylor series expansion
-    
-    # Test point
-    x_test = (2.0,2.0)
-    
-    for i, func in enumerate(function_list):
-        print(f"Testing function: {func.__name__}")
-        try:
-            result = nested_pade_sim(func, a, deg) 
-            print(result(x_test))
-            plot(a, x_test, result, func.__name__, width=5)
-        except:
-            print("FAILED")
-
+    for i in range(1):
+        t_time = 0
+        p_time = 0
+        o_time = 0
+        v_time = 0
+        start = time.time()
+        result = nested_pade_sim(exp, a, deg)
+        end = time.time()
+        o_time = end-start
+        print(f"TIMES, T-Time: {t_time}, O-Time: {o_time}, P-Time: {p_time}, V-time: {v_time}")

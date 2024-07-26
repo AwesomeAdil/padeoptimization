@@ -1,6 +1,5 @@
 import jax.numpy as jnp
 import jax
-from jax import make_jaxpr
 from jax import grad
 from math import factorial
 import numpy as np
@@ -11,32 +10,13 @@ from optimization_functions import (
     fr, sin, exp, ackley, sphere, rastrigin, rosenbrock, beale, goldstein_price, levi, bukin_n6,
     booth, matyas, three_hump_camel, easom, mccormick, styblinski_tang, schaffer_n2
 )
-
-function_list = [
-    #fr,
-    #sin,
-    #exp,
-    #ackley,
-    #sphere,
-    #rastrigin,
-    #rosenbrock,
-    #beale,
-    #goldstein_price,
-    #levi,
-    #bukin_n6,
-    booth,
-    matyas,
-    three_hump_camel,
-    easom,
-    mccormick,
-    styblinski_tang,
-    schaffer_n2
-]
-
-
 import pdb
 from grapher import plot
 import scipy.linalg
+import time
+t_time = 0
+o_time = 0
+p_time = 0
 
 # Define a small epsilon value for numerical stability
 EPSILON = 1e-8
@@ -57,7 +37,7 @@ def taylor_series_multidim(f, a, degree):
             coeffs.append(Partial(f, a[0]))
         else:
             # Compute the n-th derivative
-            derivative = grad(derivative, argnums=0)
+            derivative = grad(lambda *args: derivative(*args).sum(), argnums=0)
             # Create a lambda function for the n-th coefficient
             x = Partial(derivative, a[0])
             coeff_func = Partial(divide_by_fact, x, n)
@@ -68,6 +48,8 @@ def taylor_series_multidim(f, a, degree):
     return coeffs
 
 def make_pade_approximation(coeffs, m, n, a):
+    global p_time
+    start = time.time()
     # Print and check the types of the results
     P = []
     vals = [cf(*[a]) for cf in coeffs]
@@ -105,7 +87,7 @@ def make_pade_approximation(coeffs, m, n, a):
     
     P = jnp.array(P, dtype=jnp.float64)  # Convert to a JAX array after confirming numeric results
     
-    def res(x0, *args):
+    def res(x0):
         x0 = jnp.array(x0, dtype=jnp.float64)  # Use float64 for higher precision
         # Compute the numerator
         num = (P[0] + P[1] * x0 + P[2] * x0**2)
@@ -114,6 +96,9 @@ def make_pade_approximation(coeffs, m, n, a):
         denom = (Q[0] + Q[1] * x0 + Q[2] * x0**2) + EPSILON
         
         return num / denom
+    end = time.time()
+    p_time += end-start
+    print(end-start)
     return res
 
 def B1(f1, f2, f3, f4, *args):
@@ -159,14 +144,19 @@ def res(P, Q, *args):
 
 def addon(f, q, *args):
     x = tuple(args)
-    return f(*args) + q(*args)
+    return f(x) + q(x)
 
 def multon(f, q, *args):
-    return f(*args) * q(*args)
+    x = tuple(args)
+    return f(x) * q(x)
 
 def nested_pade_sim(f, a, deg):
+    global t_time
     a = jnp.array(a, dtype=jnp.float64)  # Use float64 for higher precision
+    start = time.time()
     coeffs = taylor_series_multidim(f, a, deg)
+    end = time.time()
+    t_time += end-start
 
     if len(a) == 1:
         return make_pade_approximation(coeffs, 2, 2, a[0])
@@ -176,36 +166,37 @@ def nested_pade_sim(f, a, deg):
         Q.append(1.0)
         Q.append(nested_pade_sim(Partial(B1, coeffs[1], coeffs[2], coeffs[3], coeffs[4]), a, deg))
         Q.append(nested_pade_sim(Partial(B2, coeffs[1], coeffs[2], coeffs[3], coeffs[4]), a, deg))
-        #print('MM', Q[1](*a))
-        #print('MM', coeffs[0](*a))
         B1C0 = Partial(multon, Q[1], coeffs[0])
-        jaxpr = make_jaxpr(B1C0)(*a)
-        #print('input', *a)
-        #print('NN', B1C0(*a))
         B1C1 = Partial(multon, Q[1], coeffs[1])
         B2C0 = Partial(multon, Q[2], coeffs[0])
-        comb = Partial(addon, B1C1, B2C0)
-        #pdb.set_trace()
-        P = [nested_pade_sim(coeffs[0], a, deg), 
+        
+        # Remove the debugger stop
+        # pdb.set_trace()
+
+        # Handle Partial function wrapping for multi-dimensionality
+        P = [
+            nested_pade_sim(coeffs[0], a, deg), 
             nested_pade_sim(Partial(addon, coeffs[1], B1C0), a, deg),
-            nested_pade_sim(Partial(addon, coeffs[2], comb), a, deg)]
+            nested_pade_sim(Partial(addon, coeffs[2], Partial(addon, B1C1, B2C0)), a, deg)
+        ]
 
         return Partial(res, P, Q)
 
-if __name__=="__main__":
+if __name__ == "__main__":
     # Define the point of expansion and degrees
-    a = (0.0,0.0)  # Example point in n-dimensional space
+    a = (0.0, 0.0)  # Example point in n-dimensional space
     deg = 5  # Example degree for Taylor series expansion
-    
-    # Test point
-    x_test = (2.0,2.0)
-    
-    for i, func in enumerate(function_list):
-        print(f"Testing function: {func.__name__}")
-        try:
-            result = nested_pade_sim(func, a, deg) 
-            print(result(x_test))
-            plot(a, x_test, result, func.__name__, width=5)
-        except:
-            print("FAILED")
 
+    for i in range(5):
+        t_time = 0
+        p_time = 0
+        o_time = 0
+        start = time.time()
+        
+        # Call the nested Pade simulation
+        result = nested_pade_sim(exp, a, deg)
+        
+        end = time.time()
+        o_time = end - start
+        
+        print(f"TIMES, T-Time: {t_time}, O-Time: {o_time}, P-Time: {p_time}")
