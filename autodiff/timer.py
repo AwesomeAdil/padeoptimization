@@ -30,6 +30,7 @@ CLIP_THRESHOLD = 1e3
 def divide_by_fact(d, deg, *args):
     return d(*args) / factorial(deg)
 
+"The multidimensional Taylor Series that take derivatives with a single variable for the pade approximate"
 def taylor_series_multidim(f, a, degree):
     coeffs = []
     derivative = f
@@ -49,6 +50,7 @@ def taylor_series_multidim(f, a, degree):
     #print([cf(*(a[1:])) for cf in coeffs])
     return coeffs
 
+"single dimensional pade approximation"
 def make_pade_approximation(coeffs, m, n, a):
     global p_time, v_time
     start = time.time()
@@ -56,7 +58,6 @@ def make_pade_approximation(coeffs, m, n, a):
     P = []
     vals = [cf(*[a]) for cf in coeffs]
     vend = time.time() - start
-    print('VEND', vend)
     v_time += vend
     #print('vals', vals)
 
@@ -107,6 +108,7 @@ def make_pade_approximation(coeffs, m, n, a):
     print(end-start)
     return res
 
+"The linear algebra necessary to find the coefficients of Q"
 def B1(f1, f2, f3, f4, *args):
     s1 = f1(*args) if callable(f1) else f1
     s2 = f2(*args) if callable(f2) else f2
@@ -129,6 +131,7 @@ def B2(f1, f2, f3, f4, *args):
         return jnp.inf  # or handle accordingly
     return (s3 * s3 - s4 * s2) / denom
 
+
 def res(P, Q, *args):
     if len(args) == 0:
         raise ValueError("At least one argument is required.")
@@ -148,6 +151,8 @@ def res(P, Q, *args):
 
     return num / denom
 
+
+"Composition functions to do basic addition and multiplication between functions"
 def addon(f, q, *args):
     x = tuple(args)
     return f(*args) + q(*args)
@@ -155,6 +160,7 @@ def addon(f, q, *args):
 def multon(f, q, *args):
     return f(*args) * q(*args)
 
+"returns function that is nested pade approximation"
 def nested_pade_sim(f, a, deg):
     global t_time
     a = jnp.array(a, dtype=jnp.float64)  # Use float64 for higher precision
